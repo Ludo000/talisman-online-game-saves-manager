@@ -12,13 +12,18 @@ from tkinter import messagebox, simpledialog, ttk, filedialog
 APPID = "247000"
 GAME_SUBPATH = os.path.join("Nomad Games", "Talisman", "saved_game")
 
-# --- Configuration des Chemins / Path Configurations ---
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# --- Path Configurations (PyInstaller Compatible) ---
+# When running inside a PyInstaller bundle, sys.executable points to the real launcher folder.
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 SLOTS_DIR = os.path.join(SCRIPT_DIR, "talisman_save_slots")
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "talisman_manager_config.json")
 os.makedirs(SLOTS_DIR, exist_ok=True)
 
-# --- Dictionnaires de Traduction / Translation Dictionaries ---
+# --- Translation Dictionaries (Locales) ---
 LOCALES = {
     "en": {
         "title": "Talisman - Save Manager",
@@ -103,6 +108,7 @@ LOCALES = {
 }
 
 def get_steam_roots():
+    """Detects primary Steam directories and secondary storage drive pathways."""
     roots = set()
     home = os.path.expanduser("~")
     system = platform.system()
@@ -142,6 +148,7 @@ def get_steam_roots():
     return [r for r in roots if os.path.isdir(r)]
 
 def detect_save_dir():
+    """Dynamically seeks out the exact game save storage path structure depending on the environment."""
     system = platform.system()
     if system == "Windows":
         appdata = os.environ.get("APPDATA")
@@ -163,6 +170,7 @@ def detect_save_dir():
     return ""
 
 def is_game_running():
+    """Evaluates whether the game client application is active on the operating system."""
     system = platform.system()
     try:
         if system == "Windows":
@@ -191,7 +199,7 @@ class TalismanManagerGUI:
         self.check_game_status()
 
     def load_config(self):
-        """Loads configuration or defaults to English."""
+        """Loads localized parameters or defaults to standard English layout."""
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, "r") as f:
@@ -202,7 +210,7 @@ class TalismanManagerGUI:
         return "en"
 
     def save_config(self):
-        """Saves current language configuration."""
+        """Saves current global preferences into configuration script safely next to launcher."""
         try:
             with open(CONFIG_FILE, "w") as f:
                 json.dump({"lang": self.lang}, f)
@@ -265,7 +273,7 @@ class TalismanManagerGUI:
         self.btn_delete_widget.pack(side="left", padx=2)
 
     def update_ui_text(self):
-        """Refreshes all text strings dynamically based on selected language."""
+        """Refreshes all interface strings dynamically based on current runtime location mapping."""
         t = LOCALES[self.lang]
         
         self.root.title(t["title"])
@@ -293,7 +301,7 @@ class TalismanManagerGUI:
         self.btn_delete_widget.config(text=t["btn_delete"])
 
     def on_language_change(self, event):
-        """Triggered when user selects a different language from the dropdown menu."""
+        """Processes dynamic dropdown input from the language context frame selection."""
         selected = self.lang_var.get()
         self.lang = "en" if selected == "English" else "fr"
         self.save_config()
@@ -301,6 +309,7 @@ class TalismanManagerGUI:
         self.refresh_slots()
 
     def browse_save_dir(self):
+        """Opens a standard navigation dialog menu interface to update target directory configuration."""
         t = LOCALES[self.lang]
         initial_dir = self.save_dir if self.save_dir else os.path.expanduser("~")
         selected_dir = filedialog.askdirectory(title=t["browse_title"], initialdir=initial_dir)
@@ -311,6 +320,7 @@ class TalismanManagerGUI:
             messagebox.showinfo(t["path_updated_title"], f"{t['path_updated_msg']}{self.save_dir}")
 
     def check_game_status(self):
+        """Maintains an ongoing polling diagnostic scan to flag running target game background threads."""
         t = LOCALES[self.lang]
         if is_game_running():
             self.lbl_warn.config(text=t["running_warn"])
@@ -319,6 +329,7 @@ class TalismanManagerGUI:
         self.root.after(3000, self.check_game_status)
 
     def refresh_slots(self):
+        """Scans the designated multi-slot profile backup directory framework to refresh active list tracking."""
         t = LOCALES[self.lang]
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -335,6 +346,7 @@ class TalismanManagerGUI:
                 self.tree.insert("", "end", iid=d, values=(d, f"{num_files} {t['files_text']}", date_str))
 
     def get_selected_slot(self):
+        """Validates interface target line selection focus within storage tree module frame arrays."""
         t = LOCALES[self.lang]
         selected = self.tree.selection()
         if not selected:
@@ -343,6 +355,7 @@ class TalismanManagerGUI:
         return selected[0]
 
     def save_current(self):
+        """Clones dynamic native target system application directory files toward dedicated backup storage segments."""
         t = LOCALES[self.lang]
         if not self.save_dir or not os.path.isdir(self.save_dir):
             messagebox.showerror(t["err_title"], t["err_no_path"])
@@ -375,6 +388,7 @@ class TalismanManagerGUI:
         messagebox.showinfo(t["success_title"], t["success_save"].format(name))
 
     def load_slot(self):
+        """Overwrites local working platform execution registry states with values parsed from active chosen storage block."""
         t = LOCALES[self.lang]
         if not self.save_dir:
             messagebox.showerror(t["err_title"], t["err_no_path"])
@@ -398,6 +412,7 @@ class TalismanManagerGUI:
         messagebox.showinfo(t["success_title"], t["success_load"].format(slot))
 
     def rename_slot(self):
+        """Modifies file mapping configurations labels mapping within active backup layout folder systems."""
         t = LOCALES[self.lang]
         slot = self.get_selected_slot()
         if not slot:
@@ -418,6 +433,7 @@ class TalismanManagerGUI:
         self.refresh_slots()
 
     def delete_slot(self):
+        """Wipes the active custom saved environment dataset block tracking elements tracking records off disk storage array."""
         t = LOCALES[self.lang]
         slot = self.get_selected_slot()
         if not slot:
